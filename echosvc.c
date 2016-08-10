@@ -6,6 +6,7 @@
 #include <syslog.h>
 #include <poll.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -13,7 +14,7 @@
 #include <arpa/inet.h>
 
 #define BUF 4096
-#define MAXCONN 1024
+#define MAXCONN 32
 
 static int use_syslog = 0;
 
@@ -68,10 +69,32 @@ static void process(int cfd) {
   }
 }
 
+sig_atomic_t kids;
+
+void sigchld_handler(int sig) {
+  kids--;
+  int oerrno = errno;
+  while(waitpid(-1,0,WNOHANG)>0)
+    1;
+  errno = oerrno;
+}
+
+static void handle(int lfd,int cfd) {
+  pid_t pid;
+
+  pid = fork();
+  if(pid==-1) { error("couldn't fork"); return; }
+  if(pid>0) { close(cfd); return; /* parent */ }
+  close(lfd);
+  process(cfd);
+  close(cfd);
+  exit(0);
+}
 
 int main() {
   int lfd,cfd,i,r,on=1;
   struct sockaddr_in addr;
+  struct sigaction sa;
 
   daemonize();
   report("echosvc started");
@@ -81,7 +104,11 @@ int main() {
   if(setsockopt(lfd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))) {
     die("setsockopt");
   }
-  /* Nonblocking */
+  /* Zombie reaping */
+  sa.sa_handler = &sigchld_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART|SA_NOCLDSTOP;
+  if (sigaction(SIGCHLD,&sa,0)<0) { die("SIGCHLD handler"); }
   /* Bind */
   memset(&addr,0,sizeof(addr));
   addr.sin_family = AF_INET;
@@ -93,8 +120,13 @@ int main() {
   if(listen(lfd,16)) { die("Listen failed"); }
   while(1) {
     cfd = accept(lfd,0,0);
-    process(cfd);
-    close(cfd);
+    if(kids>MAXCONN) {
+      error("Too many connections");
+      close(cfd);
+      continue;
+    }
+    kids++;
+    handle(lfd,cfd);
   }
   return 0;
 }
