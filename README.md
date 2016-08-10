@@ -1,4 +1,4 @@
-# tcp-echo
+# echosvc
 TCP echo service for localhost to help in autossh implementations.
 
 This is not intended to be an all-bells-and-whistles TCP echo service (should such a thing be possible!) but to support autossh. 
