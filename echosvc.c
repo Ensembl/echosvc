@@ -72,10 +72,8 @@ static void process(int cfd) {
 sig_atomic_t kids;
 
 void sigchld_handler(int sig) {
-  kids--;
   int oerrno = errno;
-  while(waitpid(-1,0,WNOHANG)>0)
-    1;
+  while(waitpid(-1,0,WNOHANG)>0) { kids--; }
   errno = oerrno;
 }
 
