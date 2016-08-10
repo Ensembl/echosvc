@@ -15,12 +15,15 @@ void die(const char *str) {
 }
 
 int main() {
-  int lfd,cfd,r,s;
+  int lfd,cfd,r,s,on=1;
   struct sockaddr_in addr;
   char buf[BUF];
 
   lfd = socket(AF_INET,SOCK_STREAM,0);
   if(lfd==-1) { die("Socket failed"); }
+  if(setsockopt(lfd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on))) {
+    die("setsockopt");
+  }
   memset(&addr,0,sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = inet_addr("127.0.0.1");
