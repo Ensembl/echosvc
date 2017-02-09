@@ -1,6 +1,6 @@
 # echosvc
-TCP echo service for localhost to help in autossh implementations.
+TCP echo service for localhost to help in autossh installations.
 
-This is not intended to be an all-bells-and-whistles TCP echo service (should such a thing be possible!) but to support autossh. 
+This is not an all-bells-and-whistles TCP echo service (should such a thing be conceivable!) but to support autossh. 
 
-Therefore it binds to port 7 and only to localhost and various other things which a fully featured program would have. Such features will probably not be added as the goal is minimal dependencies and clarity to head towards correctness.
+Therefore, it binds only to port 7, and only to localhost, and various other things which a fully featured program would make configurable. Such features will probably not be added, as the goal is for minimal dependencies and clarity, to aid travel towards correctness.
